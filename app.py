@@ -20,10 +20,10 @@ REFRESH_INTERVAL = 60
 PARTY_COLORS = {
     "STRANA PRO DOMAŽLICE": "#d97706", # sytější zlatá/oranžová pro světlý podklad
     "Pro Domažlice, KDU-ČSL a nezávislí": "#d97706",
-    "VAŠE DOMAŽLICE": "#0284c7",
+    "VAŠE DOMAŽLICE": "#58c6ff",
     "Stačilo! (KSČM a nezávislí)": "#dc2626",
-    "ANO 2011 a nezávislí": "#0d9488",
-    "ANO 2011 s podporou nezávislých": "#0d9488",
+    "ANO 2011 a nezávislí": "#adefee",
+    "ANO 2011 s podporou nezávislých": "#adefee",
     "Česká pirátská strana": "#7e22ce",
     "Občanská demokratická strana": "#2563eb",
     "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": "#026a7f",
@@ -665,7 +665,7 @@ with tab1:
                         trend_badge = '<span class="trend-pill trend-new">🆕 NEW</span>'
 
                     card_code = f"""
-                    <div class="rep-card-box" style="border-left: 6px solid {party_color};">
+                    <div class="rep-card-box" style="border-left: 20px solid {party_color};">
                         <div>
                             <div class="rep-name" title="{jmeno}">#{idx+1} {jmeno}</div>
                             <div class="rep-party" title="{strana}">{strana}</div>
