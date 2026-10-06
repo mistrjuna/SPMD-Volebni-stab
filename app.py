@@ -47,7 +47,7 @@ def hex_to_rgba(hex_code, alpha=0.18):
         return f"rgba({r}, {g}, {b}, {alpha})"
     return "rgba(241, 245, 249, 1)"
 
-# --- CSS PRO CELOOBRAZOVKOVÝ OVERLAY S ROZMAZANÝM POZADÍM ---
+# --- CSS STYLY ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap');
@@ -63,7 +63,6 @@ st.markdown("""
         padding-right: 1rem !important;
     }
 
-    /* ROBUSTNÍ HORNÍ SOUHRN VOLEB */
     .robust-summary-box {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         border: 2px solid #334155;
@@ -83,8 +82,8 @@ st.markdown("""
     }
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
     }
     .summary-card {
         background: rgba(255, 255, 255, 0.05);
@@ -93,26 +92,25 @@ st.markdown("""
         padding: 8px 12px;
     }
     .summary-label {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #94a3b8;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .summary-value {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         font-weight: 900;
         color: #38bdf8;
         font-family: 'JetBrains Mono', monospace;
         line-height: 1.1;
     }
 
-    /* KARTY ZASTUPITELŮ */
     .rep-card-box {
         border-radius: 8px;
         padding: 8px 10px;
         margin-bottom: 6px;
-        min-height: 64px;
+        min-height: 72px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -122,7 +120,7 @@ st.markdown("""
         border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     .rep-name {
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-weight: 900;
         color: #0f172a;
         white-space: nowrap;
@@ -131,7 +129,7 @@ st.markdown("""
         line-height: 1.2;
     }
     .rep-party {
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         font-weight: 700;
         color: #334155;
         white-space: nowrap;
@@ -147,9 +145,14 @@ st.markdown("""
         font-family: 'JetBrains Mono', monospace;
     }
     .rep-votes {
-        font-size: 0.88rem;
+        font-size: 0.82rem;
         font-weight: 900;
         color: #0284c7;
+    }
+    .rep-pred-votes {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #0d9488;
     }
 
     .trend-pill {
@@ -164,13 +167,10 @@ st.markdown("""
     .trend-same { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
     .trend-new { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
 
-    /* STYLY PRO OSLAVNÍ OVERLAY POP-UP (BLUR EFFECT) */
     .blur-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
         background: rgba(15, 23, 42, 0.75);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -178,9 +178,7 @@ st.markdown("""
         display: flex;
         justify-content: center;
         align-items: center;
-        animation: fadeIn 0.3s ease-out;
     }
-
     .celebration-card {
         background: linear-gradient(135deg, #026a7f 0%, #0369a1 100%);
         border: 4px solid #38bdf8;
@@ -188,22 +186,9 @@ st.markdown("""
         padding: 40px;
         text-align: center;
         color: white;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(56, 189, 248, 0.4);
         max-width: 750px;
         width: 90%;
-        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    @keyframes popIn {
-        from { transform: scale(0.8); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-
     .shot-timer-bar {
         height: 6px;
         background: #38bdf8;
@@ -211,10 +196,18 @@ st.markdown("""
         margin-top: 20px;
         animation: countdown 5s linear forwards;
     }
-
     @keyframes countdown {
         from { width: 100%; }
         to { width: 0%; }
+    }
+    .food-modal {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        border: 2px solid #fcd34d;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        color: white;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -320,6 +313,28 @@ def vypocitej_mandaty(hlasy_dict, celkem_mandatu=21, hranice_pct=5.0):
         mandaty[podily[i][1]] += 1
     return mandaty, pct_dict
 
+def vypocitej_predikce(hlasy_dict, ucast_data, kandidati_list):
+    pct_zprac = ucast_data.get('okrsky_proc', 0.0)
+    if pct_zprac == 0:
+        return hlasy_dict, vypocitej_mandaty(hlasy_dict)[0], kandidati_list, "⚪ Čeká se na 1. okrsek"
+
+    koeficient = 100.0 / pct_zprac
+    pred_hlasy_strany = {strana: int(h * koeficient) for strana, h in hlasy_dict.items()}
+    pred_mandaty, _ = vypocitej_mandaty(pred_hlasy_strany)
+
+    pred_kandidati = []
+    for k in kandidati_list:
+        k_copy = k.copy()
+        k_copy["Preferenční hlasy (predikce)"] = int(k.get("Preferenční hlasy", 0) * koeficient)
+        pred_kandidati.append(k_copy)
+
+    if pct_zprac < 30: jistota_txt = "🔴 Nízká spolehlivost"
+    elif pct_zprac < 70: jistota_txt = "🟡 Střední spolehlivost"
+    elif pct_zprac < 100: jistota_txt = "🟢 Vysoká spolehlivost"
+    else: jistota_txt = "🏁 Finální (100 %)"
+
+    return pred_hlasy_strany, pred_mandaty, pred_kandidati, jistota_txt
+
 def najdi_koalice(mandaty, min_kresel=11, zakazane=[], povinne=[]):
     strany = [s for s, m in mandaty.items() if m > 0 and s not in zakazane]
     vysledky = []
@@ -340,7 +355,7 @@ def najdi_koalice(mandaty, min_kresel=11, zakazane=[], povinne=[]):
     vysledky.sort(key=lambda x: (x[1], len(x[0])))
     return vysledky
 
-# --- VESTAVĚNÁ DATA KANDIDÁTEK ---
+# --- VESTAVĚNÁ DATA KANDIDÁTEK 2026 ---
 @st.cache_data
 def nacti_kandidatky_2026_built_in():
     try:
@@ -358,38 +373,24 @@ def nacti_kandidatky_2026_built_in():
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Krutina Viktor Ing.", "Kandidát.věk": 48, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "1. místostarosta města Domažlice", "Bydliště": "Dolejší Předměstí"},
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Štangl Jiří", "Kandidát.věk": 48, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "hlavní mistr", "Bydliště": "Dolejší Předměstí"},
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 3, "Kandidát.příjmení, jméno, tituly": "Špoták Rudolf", "Kandidát.věk": 43, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "emeritní hejtman Plzeňského kraje", "Bydliště": "Bezděkovské Předměstí"},
-
-            # PRO DOMAŽLICE
             {"Kandidátní listina.číslo": 4, "Kandidátní listina.název": "Pro Domažlice, KDU-ČSL a nezávislí", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Bc. Stanislav Antoš", "Kandidát.věk": 59, "Navrhující strana": "KDU-ČSL", "Politická příslušnost": "KDU-ČSL", "Povolání": "starosta města Domažlice", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 4, "Kandidátní listina.název": "Pro Domažlice, KDU-ČSL a nezávislí", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Vorlíček Marek MgA.", "Kandidát.věk": 47, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "varhanář, sbormistr, radní", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 4, "Kandidátní listina.název": "Pro Domažlice, KDU-ČSL a nezávislí", "Kandidát.poř. číslo": 3, "Kandidát.příjmení, jméno, tituly": "Kadlec Ivo MUDr.", "Kandidát.věk": 71, "Navrhující strana": "KDU-ČSL", "Politická příslušnost": "BEZPP", "Povolání": "zubní lékař", "Bydliště": "Domažlice"},
-
-            # ANO 2011
             {"Kandidátní listina.číslo": 3, "Kandidátní listina.název": "ANO 2011 a nezávislí", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Wiesner Radek, Ing.", "Kandidát.věk": 47, "Navrhující strana": "ANO", "Politická příslušnost": "ANO", "Povolání": "konstruktér, manažer výroby", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 3, "Kandidátní listina.název": "ANO 2011 a nezávislí", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Pauler David, Mgr.", "Kandidát.věk": 45, "Navrhující strana": "ANO", "Politická příslušnost": "ANO", "Povolání": "pedagog, podnikatel", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 3, "Kandidátní listina.název": "ANO 2011 a nezávislí", "Kandidát.poř. číslo": 3, "Kandidát.příjmení, jméno, tituly": "Piták Martin, Mgr.", "Kandidát.věk": 41, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "manažer", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 3, "Kandidátní listina.název": "ANO 2011 a nezávislí", "Kandidát.poř. číslo": 4, "Kandidát.příjmení, jméno, tituly": "Bor David", "Kandidát.věk": 44, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "OSVČ", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 3, "Kandidátní listina.název": "ANO 2011 a nezávislí", "Kandidát.poř. číslo": 5, "Kandidát.příjmení, jméno, tituly": "Látka Jan", "Kandidát.věk": 72, "Navrhující strana": "ANO", "Politická příslušnost": "ANO", "Povolání": "senátor", "Bydliště": "Domažlice"},
-
-            # SPMD
             {"Kandidátní listina.číslo": 7, "Kandidátní listina.název": "SDRUŽENÍ PRO MĚSTO DOMAŽLICE", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Mgr. Kamil Jindřich", "Kandidát.věk": 53, "Navrhující strana": "STAN", "Politická příslušnost": "BEZPP", "Povolání": "hudebník, učitel", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 7, "Kandidátní listina.název": "SDRUŽENÍ PRO MĚSTO DOMAŽLICE", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Josef Kuneš", "Kandidát.věk": 47, "Navrhující strana": "STAN", "Politická příslušnost": "BEZPP", "Povolání": "ředitel ZUŠ", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 7, "Kandidátní listina.název": "SDRUŽENÍ PRO MĚSTO DOMAŽLICE", "Kandidát.poř. číslo": 3, "Kandidát.příjmení, jméno, tituly": "Mgr. Ivan Rybár", "Kandidát.věk": 60, "Navrhující strana": "STAN", "Politická příslušnost": "BEZPP", "Povolání": "ředitel základní školy Domažlice", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 7, "Kandidátní listina.název": "SDRUŽENÍ PRO MĚSTO DOMAŽLICE", "Kandidát.poř. číslo": 4, "Kandidát.příjmení, jméno, tituly": "Novák Zdeněk JUDr.", "Kandidát.věk": 74, "Navrhující strana": "STAN", "Politická příslušnost": "BEZPP", "Povolání": "emeritní starosta, důchodce", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 7, "Kandidátní listina.název": "SDRUŽENÍ PRO MĚSTO DOMAŽLICE", "Kandidát.poř. číslo": 5, "Kandidát.příjmení, jméno, tituly": "Ing. Zbyněk Wolf", "Kandidát.věk": 52, "Navrhující strana": "STAN", "Politická příslušnost": "BEZPP", "Povolání": "projektant", "Bydliště": "Domažlice"},
-
-            # ODS
             {"Kandidátní listina.číslo": 6, "Kandidátní listina.název": "Občanská demokratická strana", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Faschingbauer Pavel, Ing.", "Kandidát.věk": 53, "Navrhující strana": "ODS", "Politická příslušnost": "ODS", "Povolání": "ekonom", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 6, "Kandidátní listina.název": "Občanská demokratická strana", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Mgr. Jakub Faschingbauer", "Kandidát.věk": 33, "Navrhující strana": "ODS", "Politická příslušnost": "BEZPP", "Povolání": "lékárník", "Bydliště": "Domažlice"},
-
-            # ŽIJEME DOMAŽLICE
             {"Kandidátní listina.číslo": 8, "Kandidátní listina.název": "ŽIJEME DOMAŽLICE - VÝZVA PRO NOVÝ SMĚR MĚSTA", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Hradecká Hana Mgr. et Mgr.", "Kandidát.věk": 59, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "středoškolská učitelka VOŠ, OA a SZŠ Domažlice", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 8, "Kandidátní listina.název": "ŽIJEME DOMAŽLICE - VÝZVA PRO NOVÝ SMĚR MĚSTA", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Piták Luboš Mgr.", "Kandidát.věk": 62, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "OSVČ, právník", "Bydliště": "Domažlice"},
-
-            # SPD
-            {"Kandidátní listina.číslo": 9, "Kandidátní listina.název": "Svoboda a přímá demokracie (SPD)", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Obdržálek Michal	", "Kandidát.věk": 36, "Navrhující strana": "SPD", "Politická příslušnost": "SPD", "Povolání": "živnostník v pohostinství, zastupitel města", "Bydliště": "Domažlice"},
-
-            # PIRÁTI
+            {"Kandidátní listina.číslo": 9, "Kandidátní listina.název": "Svoboda a přímá demokracie (SPD)", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Obdržálek Michal", "Kandidát.věk": 36, "Navrhující strana": "SPD", "Politická příslušnost": "SPD", "Povolání": "živnostník v pohostinství, zastupitel města", "Bydliště": "Domažlice"},
             {"Kandidátní listina.číslo": 5, "Kandidátní listina.název": "Česká pirátská strana", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Pachl Jan", "Kandidát.věk": 47, "Navrhující strana": "PIRÁTI", "Politická příslušnost": "PIRÁTI", "Povolání": "sklenář - OSVČ", "Bydliště": "Domažlice"}
         ]
         return pd.DataFrame(built_in_kands)
@@ -403,17 +404,11 @@ url_live = st.sidebar.text_input(
     value="https://volby.gov.cz/appdata/kv2026/20261009/odata/okresy/vysledky_obce_okres_CZ0321.xml"
 )
 
-if "is_simulation_active" not in st.session_state:
-    st.session_state["is_simulation_active"] = False
-
-if "simulated_bonus_mandate" not in st.session_state:
-    st.session_state["simulated_bonus_mandate"] = 0
-
-if "show_shot_modal" not in st.session_state:
-    st.session_state["show_shot_modal"] = False
-
-if "last_spmd_mandates" not in st.session_state:
-    st.session_state["last_spmd_mandates"] = 0
+if "is_simulation_active" not in st.session_state: st.session_state["is_simulation_active"] = False
+if "simulated_bonus_mandate" not in st.session_state: st.session_state["simulated_bonus_mandate"] = 0
+if "trigger_food_now" not in st.session_state: st.session_state["trigger_food_now"] = False
+if "show_shot_modal" not in st.session_state: st.session_state["show_shot_modal"] = False
+if "last_spmd_mandates" not in st.session_state: st.session_state["last_spmd_mandates"] = 0
 
 if st.sidebar.button("🔮 Spustit Simulaci Volby 2026"):
     st.session_state["is_simulation_active"] = True
@@ -425,9 +420,14 @@ if st.sidebar.button("🥃 Simulovat nový mandát pro SPMD (+Zvuk)"):
     st.session_state["show_shot_modal"] = True
     st.rerun()
 
+if st.sidebar.button("🍕 Simulovat hlášku k jídlu"):
+    st.session_state["trigger_food_now"] = True
+    st.rerun()
+
 if st.sidebar.button("🔄 Návrat k živým datům (Reset)"):
     st.session_state["is_simulation_active"] = False
     st.session_state["simulated_bonus_mandate"] = 0
+    st.session_state["trigger_food_now"] = False
     st.session_state["show_shot_modal"] = False
     st.rerun()
 
@@ -438,14 +438,7 @@ data_past, _ = nacti_kompletni_csu_data("https://volby.gov.cz/pls/kv2022/vysledk
 past_mandates = {s["Kandidátní listina"]: s["Mandáty ČSÚ"] for s in data_past["strany"]} if data_past else {}
 past_votes_kand = {k["Jméno a příjmení"]: k["Preferenční hlasy"] for k in data_past["vsechni_kandidati"]} if data_past else {}
 
-PAST_PARTY_MAP = {
-    "ANO 2011 a nezávislí": "ANO 2011 s podporou nezávislých",
-    "Pro Domažlice, KDU-ČSL a nezávislí": "Vždy Domažlice - KDU-ČSL a nezávislí",
-    "Stačilo! (KSČM a nezávislí)": "Komunistická strana Čech a Moravy",
-    "STRANA PRO DOMAŽLICE": "Vždy Domažlice - KDU-ČSL a nezávislí"
-}
-
-# SESTAVENÍ MODELU
+# PRÁCE S MODELI / DATA
 if st.session_state["is_simulation_active"]:
     sim_votes = {
         "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": 14700,
@@ -462,27 +455,15 @@ if st.session_state["is_simulation_active"]:
     mandates_calc, pct_calc = vypocitej_mandaty(sim_votes)
     if "SDRUŽENÍ PRO MĚSTO DOMAŽLICE" in mandates_calc:
         mandates_calc["SDRUŽENÍ PRO MĚSTO DOMAŽLICE"] += st.session_state["simulated_bonus_mandate"]
-        
-    df_strany_render = pd.DataFrame([
-        {"Kandidátní listina": k, "Celkem hlasů": v, "Podíl (%)": pct_calc[k], "Mandáty": mandates_calc[k]}
-        for k, v in sim_votes.items()
-    ])
-    
-    def srovnej_mandaty_sim(row):
-        nazev, aktualni = row["Kandidátní listina"], row["Mandáty"]
-        past_name = PAST_PARTY_MAP.get(nazev, nazev)
-        if past_name in past_mandates:
-            rozdil = aktualni - past_mandates[past_name]
-            if rozdil > 0: return f"🟢 +{rozdil} m."
-            elif rozdil < 0: return f"🔴 {rozdil} m."
-            else: return "⚪ 0 m."
-        return "🆕 Nová"
 
-    df_strany_render["Srovnání (2022)"] = df_strany_render.apply(srovnej_mandaty_sim, axis=1)
+    ucast_render = {
+        "okrsky_celkem": 12, "okrsky_zprac": 5, "okrsky_proc": 41.67,
+        "zapsani_volici": 8214, "vydane_obalky": 3777, "platne_hlasy": sum(sim_votes.values()),
+        "ucast_proc": 45.98
+    }
 
+    # Sestavení zvolených kandidátů z vestavěné databáze pro simulaci
     zvoleni_list = []
-    vsechni_list = []
-    
     if df_kandidatky_2026 is not None:
         p_col = 'Kandidátní listina.název'
         n_col = 'Kandidát.příjmení, jméno, tituly'
@@ -496,34 +477,36 @@ if st.session_state["is_simulation_active"]:
             
             if party_kands.empty:
                 for i in range(1, m_count + 1):
-                    cand_obj = {
+                    zvoleni_list.append({
                         "Poř.": i, "Jméno a příjmení": f"Kandidát #{i} ({party})",
                         "Kandidátní listina": party, "Preferenční hlasy": int(sim_votes[party] / 15) - i * 10,
                         "Podíl hlasů (%)": 5.0, "Zvolen": True, "Status": "✅ Získal mandát"
-                    }
-                    zvoleni_list.append(cand_obj)
+                    })
             else:
                 for idx, (_, row) in enumerate(party_kands.iterrows()):
+                    if idx >= m_count: break
                     jmeno = row[n_col]
                     poradi = row[num_col]
-                    is_elected = (idx < m_count)
                     pref_votes = max(100, int(sim_votes[party] / 21) + (21 - poradi) * 35)
-                    
-                    cand_obj = {
+                    zvoleni_list.append({
                         "Poř.": poradi, "Jméno a příjmení": jmeno, "Kandidátní listina": party,
                         "Preferenční hlasy": pref_votes, "Podíl hlasů (%)": round((pref_votes / sim_votes[party]) * 100, 2),
-                        "Zvolen": is_elected
-                    }
-                    vsechni_list.append(cand_obj)
-                    if is_elected:
-                        cand_obj["Status"] = "✅ Získal mandát"
-                        zvoleni_list.append(cand_obj)
-                    
-    ucast_render = {
-        "okrsky_celkem": 12, "okrsky_zprac": 12, "okrsky_proc": 100.0,
-        "zapsani_volici": 8214, "vydane_obalky": 3777, "platne_hlasy": sum(sim_votes.values()),
-        "ucast_proc": 45.98
-    }
+                        "Zvolen": True, "Status": "✅ Získal mandát"
+                    })
+
+    # Výpočet predikcí
+    pred_hlasy, pred_mandaty, pred_kandidati, spolehlivost_txt = vypocitej_predikce(sim_votes, ucast_render, zvoleni_list)
+
+    df_strany_render = pd.DataFrame([
+        {
+            "Kandidátní listina": k, 
+            "Celkem hlasů": v, 
+            "Podíl (%)": pct_calc[k], 
+            "Mandáty (aktuální)": mandates_calc[k],
+            "Mandáty (predikce 100%)": pred_mandaty.get(k, 0)
+        }
+        for k, v in sim_votes.items()
+    ])
 
 else:
     if data_live and data_live["strany"]:
@@ -534,42 +517,49 @@ else:
         if "SDRUŽENÍ PRO MĚSTO DOMAŽLICE" in mandates_calc:
             mandates_calc["SDRUŽENÍ PRO MĚSTO DOMAŽLICE"] += st.session_state["simulated_bonus_mandate"]
             
-        df_strany_render["Mandáty"] = df_strany_render["Kandidátní listina"].map(mandates_calc)
-        
-        def srovnej_mandaty_live(row):
-            nazev, aktualni = row["Kandidátní listina"], row["Mandáty"]
-            if nazev in past_mandates:
-                rozdil = aktualni - past_mandates[nazev]
-                if rozdil > 0: return f"🟢 +{rozdil} m."
-                elif rozdil < 0: return f"🔴 {rozdil} m."
-                else: return "⚪ 0 m."
-            return "🆕 Nová"
+        df_strany_render["Mandáty (aktuální)"] = df_strany_render["Kandidátní listina"].map(mandates_calc)
+        ucast_render = data_live["ucast"]
 
-        df_strany_render["Srovnání (2022)"] = df_strany_render.apply(srovnej_mandaty_live, axis=1)
+        # Výpočet predikce
+        pred_hlasy, pred_mandaty, pred_kandidati, spolehlivost_txt = vypocitej_predikce(hlasy_dict, ucast_render, data_live["vsechni_kandidati"])
+        df_strany_render["Mandáty (predikce 100%)"] = df_strany_render["Kandidátní listina"].map(pred_mandaty)
 
         zvoleni_list = data_live["zvoleni_kandidati"]
-        vsechni_list = data_live["vsechni_kandidati"]
-        ucast_render = data_live["ucast"]
     else:
-        df_strany_render, zvoleni_list, vsechni_list, ucast_render = None, [], [], None
+        df_strany_render, zvoleni_list, ucast_render, spolehlivost_txt = None, [], None, "Čeká se na data"
 
-# --- AUTOMATICKÁ DETEKCE NOVÉHO MANDÁTU PRO SPMD ---
+# DETEKCE NOVÉHO MANDÁTU PRO SPMD
 current_spmd_m = mandates_calc.get("SDRUŽENÍ PRO MĚSTO DOMAŽLICE", 0) if 'mandates_calc' in locals() else 0
 if current_spmd_m > st.session_state["last_spmd_mandates"] and st.session_state["last_spmd_mandates"] > 0:
     st.session_state["show_shot_modal"] = True
 st.session_state["last_spmd_mandates"] = current_spmd_m
 
-# --- CELOOBRAZOVKOVÝ OSLAVNÍ OVERLAY (S SPOLEHLIVÝM AUTO-DISMISS) ---
+# PŘIPOMÍNAČ JÍDLA
+now_ts = time.time()
+if "last_food_time" not in st.session_state: st.session_state["last_food_time"] = now_ts
+
+if (now_ts - st.session_state["last_food_time"]) > 1800 or st.session_state["trigger_food_now"]:
+    st.markdown("""
+    <div class="food-modal">
+        <h2 style="margin:0; font-size: 1.8rem; font-weight:800;">🍕 VOLEBNÍ ŠTÁB: ČAS NA JÍDLO! 🍔</h2>
+        <p style="margin: 8px 0 0 0; font-size: 1.1rem;">Nezapomínejte jíst a doplňovat energii! Ať ta sobotní noc stojí za to!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("Pochopeno, doplňujeme zásoby! 🍖"):
+        st.session_state["last_food_time"] = now_ts
+        st.session_state["trigger_food_now"] = False
+        st.rerun()
+
+# POP-UP OVERLAY S ROZMAZANÝM POZADÍM
 if st.session_state.get("show_shot_modal", False):
     st.balloons()
     prehrat_oslavny_zvuk()
 
-    # Vytvoříme HTML modal s rozmazaným pozadím
     st.markdown(f"""
     <div class="blur-overlay" id="celebrationOverlay">
         <div class="celebration-card">
             <h1 style="font-size: 3rem; margin: 0; font-weight: 900; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-                🥃 NOVÝ MANDÁT JE DOMA! 🥃
+                 NOVÝ MANDÁT JE DOMA!
             </h1>
             <p style="font-size: 1.8rem; margin: 20px 0; font-weight: 800; color: #fef08a;">
                 Sdružení pro město Domažlice právě získalo <span style="font-size: 2.2rem; color: #ffffff;">{current_spmd_m}. mandát</span>!
@@ -582,11 +572,11 @@ if st.session_state.get("show_shot_modal", False):
     </div>
     """, unsafe_allow_html=True)
 
-    # Časovač přímo v Pythonu - aplikace počká 5 sekund a pak bezpečně obnoví stav bez JavaScriptových konfliktů
     time.sleep(5)
     st.session_state["show_shot_modal"] = False
     st.rerun()
-# --- ROBUSTNÍ SOUHRN VOLEB NAHOŘE ---
+
+# HORNÍ ROBUSTNÍ SOUHRN MĚSTA & PREDIKCE
 if ucast_render:
     ts_now = datetime.now().strftime("%H:%M:%S")
     status_txt = "SIMULACE 2026" if st.session_state["is_simulation_active"] else f"LIVE ({ts_now})"
@@ -594,7 +584,7 @@ if ucast_render:
     st.markdown(f"""
     <div class="robust-summary-box">
         <div class="summary-title">
-            <span>🏛️ DOMAŽLICE — VOLEBNÍ VÝSLEDKY (21 MANDÁTŮ)</span>
+            <span>🏛️ DOMAŽLICE — VOLEBNÍ VÝSLEDKY A PREDIKCE (21 MANDÁTŮ)</span>
             <span style="font-size: 0.95rem; background: #0284c7; padding: 2px 10px; border-radius: 6px;">{status_txt}</span>
         </div>
         <div class="summary-grid">
@@ -607,49 +597,63 @@ if ucast_render:
                 <div class="summary-value" style="color: #4ade80;">{ucast_render['ucast_proc']:.2f}%</div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">Zapsaní Voliči</div>
-                <div class="summary-value" style="color: #f8fafc;">{ucast_render['zapsani_volici']:,}</div>
-            </div>
-            <div class="summary-card">
                 <div class="summary-label">Platné Hlasy</div>
                 <div class="summary-value" style="color: #f59e0b;">{ucast_render['platne_hlasy']:,}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Spolehlivost Predikce</div>
+                <div class="summary-value" style="font-size: 1.1rem; color: #facc15;">{spolehlivost_txt}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">SPMD Mandáty (Predikce)</div>
+                <div class="summary-value" style="color: #38bdf8;">{pred_mandaty.get('SDRUŽENÍ PRO MĚSTO DOMAŽLICE', 0)} m.</div>
             </div>
         </div>
     </div>
     """.replace(',', ' '), unsafe_allow_html=True)
 
-# --- ZÁLOŽKY ---
+# ZÁLOŽKY
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 VÝSLEDKY & ZASTUPITELÉ", 
+    "📊 VÝSLEDKY & PREDIKCE", 
     "🤝 KOALIČNÍ KALKULÁTOR", 
     "📜 KOMPLETNÍ KANDIDÁTKY 2026",
     "🗺️ DETAIL OKRSKŮ"
 ])
 
-# ==========================================
-# COMMAND CENTER: DVA SLOUPCE AŽ DOLŮ
-# ==========================================
 with tab1:
     if df_strany_render is not None:
-        col_strany, col_zastupitele = st.columns([1.1, 1.9])
+        col_strany, col_zastupitele = st.columns([1.2, 1.8])
 
-        # LEVÝ SLOUPEC: VÝSLEDKY PODLE KANDIDÁTEK
+        # TABULKA STRAN S PREDIKCÍ
         with col_strany:
-            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>📊 Výsledky kandidátních listin</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>📊 Výsledky a predikce podle stran</h4>", unsafe_allow_html=True)
+            
+            def trend_mandatu(row):
+                act = row["Mandáty (aktuální)"]
+                prd = row["Mandáty (predikce 100%)"]
+                diff = prd - act
+                if diff > 0: return f"{prd} m. (↗️ +{diff})"
+                elif diff < 0: return f"{prd} m. (↘️ {diff})"
+                else: return f"{prd} m. (➡️ 0)"
+
+            df_strany_render["Predikce 100%"] = df_strany_render.apply(trend_mandatu, axis=1)
+
             st.dataframe(
-                df_strany_render[["Kandidátní listina", "Celkem hlasů", "Podíl (%)", "Mandáty", "Srovnání (2022)"]].sort_values(by="Celkem hlasů", ascending=False), 
+                df_strany_render[["Kandidátní listina", "Celkem hlasů", "Podíl (%)", "Mandáty (aktuální)", "Predikce 100%"]].sort_values(by="Celkem hlasů", ascending=False), 
                 use_container_width=True, 
                 hide_index=True,
                 height=520
             )
 
-        # PRAVÝ SLOUPEC: KARTY ZVOLENÝCH ZASTUPITELŮ
+        # MŘÍŽKA ZASTUPITELŮ S PREDIKCÍ PREFERENČNÍCH HLASŮ
         with col_zastupitele:
-            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>👥 Zvolení zastupitelé (21 křesel)</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>👥 Zvolení a predikovaní zastupitelé (21 křesel)</h4>", unsafe_allow_html=True)
             if zvoleni_list:
                 df_zvoleni = pd.DataFrame(zvoleni_list).sort_values(by="Preferenční hlasy", ascending=False)
                 zastupitelie_list = df_zvoleni.to_dict('records')
                 
+                pred_map = {k["Jméno a příjmení"]: k.get("Preferenční hlasy (predikce)", k["Preferenční hlasy"]) for k in pred_kandidati} if 'pred_kandidati' in locals() else {}
+
                 grid_cols = st.columns(3)
                 
                 for idx, rep in enumerate(zastupitelie_list[:21]):
@@ -657,20 +661,10 @@ with tab1:
                     jmeno = rep["Jméno a příjmení"]
                     strana = rep["Kandidátní listina"]
                     hlasy = rep["Preferenční hlasy"]
+                    pred_hlasy_val = pred_map.get(jmeno, hlasy)
                     
                     party_color = get_party_color(strana)
                     bg_rgba = hex_to_rgba(party_color, alpha=0.18)
-
-                    if jmeno in past_votes_kand:
-                        diff = hlasy - past_votes_kand[jmeno]
-                        if diff > 0:
-                            trend_badge = f'<span class="trend-pill trend-up">🟢 +{diff:,}</span>'
-                        elif diff < 0:
-                            trend_badge = f'<span class="trend-pill trend-down">🔴 {diff:,}</span>'
-                        else:
-                            trend_badge = '<span class="trend-pill trend-same">⚪ 0</span>'
-                    else:
-                        trend_badge = '<span class="trend-pill trend-new">🆕 NEW</span>'
 
                     card_code = f"""
                     <div class="rep-card-box" style="background-color: {bg_rgba}; border-left: 20px solid {party_color};">
@@ -680,16 +674,13 @@ with tab1:
                         </div>
                         <div class="rep-foot">
                             <span class="rep-votes">{hlasy:,} h.</span>
-                            {trend_badge}
+                            <span class="rep-pred-votes" title="Očekávaný výsledek při 100% sečtení">🔮 ~{pred_hlasy_val:,} h.</span>
                         </div>
                     </div>
                     """.replace(',', ' ')
                     
                     col_target.markdown(card_code, unsafe_allow_html=True)
 
-# ==========================================
-# KARTA 2: KOALIČNÍ KALKULÁTOR
-# ==========================================
 with tab2:
     if df_strany_render is not None:
         vsechny_strany = list(df_strany_render["Kandidátní listina"].unique())
@@ -716,10 +707,8 @@ with tab2:
                 </div>
                 """, unsafe_allow_html=True)
 
-# ==========================================
-# KARTA 3: KOMPLETNÍ KANDIDÁTKY STRAN
-# ==========================================
 with tab3:
+    st.subheader("📜 Kompletní kandidátní listiny všech stran pro rok 2026")
     if df_kandidatky_2026 is not None:
         p_col = 'Kandidátní listina.název'
         f1, f2 = st.columns(2)
@@ -739,9 +728,6 @@ with tab3:
             height=450
         )
 
-# ==========================================
-# KARTA 4: DETAIL OKRSKŮ
-# ==========================================
 with tab4:
     if ucast_render:
         st.write(f"Sečteno **{ucast_render['okrsky_zprac']} z {ucast_render['okrsky_celkem']} okrsků** ({ucast_render['okrsky_proc']:.1f} %).")
