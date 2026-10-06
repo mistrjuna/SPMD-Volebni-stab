@@ -11,14 +11,14 @@ st.set_page_config(
     page_title="SPMD — Volební Štáb LIVE Domažlice 2026", 
     layout="wide", 
     page_icon="🏛️",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 REFRESH_INTERVAL = 60
 
 # --- PŘESNÉ BAREVNÉ SCHÉMA STRAN ---
 PARTY_COLORS = {
-    "STRANA PRO DOMAŽLICE": "#d97706", # sytější zlatá/oranžová pro světlý podklad
+    "STRANA PRO DOMAŽLICE": "#d97706",
     "Pro Domažlice, KDU-ČSL a nezávislí": "#d97706",
     "VAŠE DOMAŽLICE": "#58c6ff",
     "Stačilo! (KSČM a nezávislí)": "#dc2626",
@@ -38,161 +38,183 @@ def get_party_color(party_name):
     for k, v in PARTY_COLORS.items():
         if k.lower() in p_clean.lower() or p_clean.lower() in k.lower():
             return v
-    return "#2563eb"
+    return "#475569"
 
-# --- SVĚTLÉ A VYSOCE KONTRASTNÍ STYLOVÁNÍ KARET ---
+def hex_to_rgba(hex_code, alpha=0.18):
+    hex_code = hex_code.lstrip('#')
+    if len(hex_code) == 6:
+        r, g, b = tuple(int(hex_code[i:i+2], 16) for i in (0, 2, 4))
+        return f"rgba({r}, {g}, {b}, {alpha})"
+    return "rgba(241, 245, 249, 1)"
+
+# --- CSS PRO CELOOBRAZOVKOVÝ OVERLAY S ROZMAZANÝM POZADÍM ---
 st.markdown("""
 <style>
-    @import url('nts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
     }
 
     .block-container {
-        padding-top: 4.5rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 3.8rem !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
 
-    .cmd-header {
+    /* ROBUSTNÍ HORNÍ SOUHRN VOLEB */
+    .robust-summary-box {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        border: 1px solid #334155;
+        border: 2px solid #334155;
         border-radius: 12px;
-        padding: 14px 20px;
+        padding: 12px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .summary-title {
+        color: #ffffff;
+        font-size: 1.3rem;
+        font-weight: 900;
+        margin-bottom: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
     }
-    .cmd-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #ffffff;
-        display: flex;
-        align-items: center;
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
         gap: 12px;
     }
-    
-    .status-online {
-        background: rgba(34, 197, 94, 0.15);
-        border: 1px solid #22c55e;
-        color: #86efac;
-        font-size: 0.75rem;
+    .summary-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+    .summary-label {
+        font-size: 0.85rem;
+        color: #94a3b8;
         font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .summary-value {
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #38bdf8;
         font-family: 'JetBrains Mono', monospace;
-    }
-    .status-sim {
-        background: rgba(248, 234, 78, 0.2);
-        border: 1px solid #f8ea4e;
-        color: #fef08a;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-family: 'JetBrains Mono', monospace;
-    }
-    .status-dot-green {
-        width: 8px;
-        height: 8px;
-        background-color: #22c55e;
-        border-radius: 50%;
-        box-shadow: 0 0 8px #22c55e;
-    }
-    .status-dot-yellow {
-        width: 8px;
-        height: 8px;
-        background-color: #f8ea4e;
-        border-radius: 50%;
-        box-shadow: 0 0 8px #f8ea4e;
+        line-height: 1.1;
     }
 
-    /* SVĚTLÉ KARTY ZASTUPITELŮ S ČERNÝM / TMAVÝM PÍSMEM */
+    /* KARTY ZASTUPITELŮ */
     .rep-card-box {
-        background-color: #ffffff !important;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
-        min-height: 85px;
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        min-height: 64px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        border-top: 1px solid #e2e8f0;
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        border-top: 1px solid rgba(0,0,0,0.05);
+        border-right: 1px solid rgba(0,0,0,0.05);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     .rep-name {
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
-        color: #0f172a !important; /* Černé / tmavě grafitové písmo */
+        font-size: 0.95rem;
+        font-weight: 900;
+        color: #0f172a;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-bottom: 2px;
+        line-height: 1.2;
     }
     .rep-party {
-        font-size: 0.75rem !important;
-        font-weight: 700 !important;
-        color: #475569 !important; /* Tmavě šedé písmo */
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #334155;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: 1.2;
     }
     .rep-foot {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 8px;
+        margin-top: 4px;
         font-family: 'JetBrains Mono', monospace;
     }
     .rep-votes {
-        font-size: 0.88rem !important;
-        font-weight: 800 !important;
-        color: #0284c7 !important; /* Tmavší modrá pro hlasy */
+        font-size: 0.88rem;
+        font-weight: 900;
+        color: #0284c7;
     }
 
     .trend-pill {
         font-size: 0.72rem;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 6px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
         font-family: 'JetBrains Mono', monospace;
     }
     .trend-up { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
     .trend-down { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
     .trend-same { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    .trend-new { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .trend-new { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
 
-    .badge-krehka { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
-    .badge-bezpecna { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
-    .badge-dominantni { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid #38bdf8; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
-
-    .shot-modal {
-        background: linear-gradient(135deg, #026a7f 0%, #0284c7 100%);
-        border: 2px solid #38bdf8;
-        border-radius: 16px;
-        padding: 24px;
-        text-align: center;
-        color: white;
-        margin-bottom: 20px;
-        box-shadow: 0 0 30px rgba(2, 106, 127, 0.6);
+    /* STYLY PRO OSLAVNÍ OVERLAY POP-UP (BLUR EFFECT) */
+    .blur-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 999999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease-out;
     }
-    .food-modal {
-        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-        border: 2px solid #fcd34d;
-        border-radius: 16px;
-        padding: 20px;
+
+    .celebration-card {
+        background: linear-gradient(135deg, #026a7f 0%, #0369a1 100%);
+        border: 4px solid #38bdf8;
+        border-radius: 24px;
+        padding: 40px;
         text-align: center;
         color: white;
-        margin-bottom: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(56, 189, 248, 0.4);
+        max-width: 750px;
+        width: 90%;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .shot-timer-bar {
+        height: 6px;
+        background: #38bdf8;
+        border-radius: 3px;
+        margin-top: 20px;
+        animation: countdown 5s linear forwards;
+    }
+
+    @keyframes countdown {
+        from { width: 100%; }
+        to { width: 0%; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -381,20 +403,17 @@ url_live = st.sidebar.text_input(
     value="https://volby.gov.cz/appdata/kv2026/20261009/odata/okresy/vysledky_obce_okres_CZ0321.xml"
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### ⚡ Simulační Centrum 2026")
-
 if "is_simulation_active" not in st.session_state:
     st.session_state["is_simulation_active"] = False
 
 if "simulated_bonus_mandate" not in st.session_state:
     st.session_state["simulated_bonus_mandate"] = 0
 
-if "trigger_food_now" not in st.session_state:
-    st.session_state["trigger_food_now"] = False
-
 if "show_shot_modal" not in st.session_state:
     st.session_state["show_shot_modal"] = False
+
+if "last_spmd_mandates" not in st.session_state:
+    st.session_state["last_spmd_mandates"] = 0
 
 if st.sidebar.button("🔮 Spustit Simulaci Volby 2026"):
     st.session_state["is_simulation_active"] = True
@@ -406,14 +425,9 @@ if st.sidebar.button("🥃 Simulovat nový mandát pro SPMD (+Zvuk)"):
     st.session_state["show_shot_modal"] = True
     st.rerun()
 
-if st.sidebar.button("🍕 Simulovat hlášku k jídlu"):
-    st.session_state["trigger_food_now"] = True
-    st.rerun()
-
 if st.sidebar.button("🔄 Návrat k živým datům (Reset)"):
     st.session_state["is_simulation_active"] = False
     st.session_state["simulated_bonus_mandate"] = 0
-    st.session_state["trigger_food_now"] = False
     st.session_state["show_shot_modal"] = False
     st.rerun()
 
@@ -431,7 +445,7 @@ PAST_PARTY_MAP = {
     "STRANA PRO DOMAŽLICE": "Vždy Domažlice - KDU-ČSL a nezávislí"
 }
 
-# SESTAVENÍ SIMULAČNÍHO MODELU PODLE PREDIKCÍ
+# SESTAVENÍ MODELU
 if st.session_state["is_simulation_active"]:
     sim_votes = {
         "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": 14700,
@@ -476,7 +490,6 @@ if st.session_state["is_simulation_active"]:
         
         for party, m_count in mandates_calc.items():
             if m_count <= 0: continue
-            
             party_kands = df_kandidatky_2026[
                 df_kandidatky_2026[p_col].str.contains(party[:10], case=False, na=False, regex=False)
             ].sort_values(by=num_col)
@@ -484,13 +497,9 @@ if st.session_state["is_simulation_active"]:
             if party_kands.empty:
                 for i in range(1, m_count + 1):
                     cand_obj = {
-                        "Poř.": i,
-                        "Jméno a příjmení": f"Kandidát #{i} ({party})",
-                        "Kandidátní listina": party,
-                        "Preferenční hlasy": int(sim_votes[party] / 15) - i * 10,
-                        "Podíl hlasů (%)": 5.0,
-                        "Zvolen": True,
-                        "Status": "✅ Získal mandát"
+                        "Poř.": i, "Jméno a příjmení": f"Kandidát #{i} ({party})",
+                        "Kandidátní listina": party, "Preferenční hlasy": int(sim_votes[party] / 15) - i * 10,
+                        "Podíl hlasů (%)": 5.0, "Zvolen": True, "Status": "✅ Získal mandát"
                     }
                     zvoleni_list.append(cand_obj)
             else:
@@ -501,11 +510,8 @@ if st.session_state["is_simulation_active"]:
                     pref_votes = max(100, int(sim_votes[party] / 21) + (21 - poradi) * 35)
                     
                     cand_obj = {
-                        "Poř.": poradi,
-                        "Jméno a příjmení": jmeno,
-                        "Kandidátní listina": party,
-                        "Preferenční hlasy": pref_votes,
-                        "Podíl hlasů (%)": round((pref_votes / sim_votes[party]) * 100, 2),
+                        "Poř.": poradi, "Jméno a příjmení": jmeno, "Kandidátní listina": party,
+                        "Preferenční hlasy": pref_votes, "Podíl hlasů (%)": round((pref_votes / sim_votes[party]) * 100, 2),
                         "Zvolen": is_elected
                     }
                     vsechni_list.append(cand_obj)
@@ -547,99 +553,99 @@ else:
     else:
         df_strany_render, zvoleni_list, vsechni_list, ucast_render = None, [], [], None
 
-# --- PŘIPOMÍNAČ JÍDLA ---
-now_ts = time.time()
-if "last_food_time" not in st.session_state:
-    st.session_state["last_food_time"] = now_ts
+# --- AUTOMATICKÁ DETEKCE NOVÉHO MANDÁTU PRO SPMD ---
+current_spmd_m = mandates_calc.get("SDRUŽENÍ PRO MĚSTO DOMAŽLICE", 0) if 'mandates_calc' in locals() else 0
+if current_spmd_m > st.session_state["last_spmd_mandates"] and st.session_state["last_spmd_mandates"] > 0:
+    st.session_state["show_shot_modal"] = True
+st.session_state["last_spmd_mandates"] = current_spmd_m
 
-if (now_ts - st.session_state["last_food_time"]) > 1800 or st.session_state["trigger_food_now"]:
-    st.markdown("""
-    <div class="food-modal">
-        <h2 style="margin:0; font-size: 1.8rem; font-weight:800;">🍕 VOLEBNÍ ŠTÁB: ČAS NA JÍDLO! 🍔</h2>
-        <p style="margin: 8px 0 0 0; font-size: 1.1rem;">
-            Nezapomínejte jíst a doplňovat energii! Ať ta sobotní noc stojí za to a vydržíte v plné síle až do konečných výsledků!
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("Pochopeno, doplňujeme zásoby! 🍖"):
-        st.session_state["last_food_time"] = now_ts
-        st.session_state["trigger_food_now"] = False
-        st.rerun()
-
-# --- MODAL PRO OSLAVU MANDÁTU ---
+# --- CELOOBRAZOVKOVÝ OSLAVNÍ OVERLAY (S SPOLEHLIVÝM AUTO-DISMISS) ---
 if st.session_state.get("show_shot_modal", False):
     st.balloons()
     prehrat_oslavny_zvuk()
-    spmd_m = mandates_calc.get("SDRUŽENÍ PRO MĚSTO DOMAŽLICE", 0)
+
+    # Vytvoříme HTML modal s rozmazaným pozadím
     st.markdown(f"""
-    <div class="shot-modal">
-        <h1 style="font-size: 2.2rem; margin: 0; font-weight: 800;">🥃 DALŠÍ MANDÁT JE DOMA! 🥃</h1>
-        <p style="font-size: 1.3rem; margin: 10px 0 15px 0;">
-            Sdružení pro město Domažlice právě získalo <b>{spmd_m}. mandát</b>! <br>
-            <b>POVINNOST ŠTÁBU: Všichni povinně RUNDU PANÁKŮ na oslavu! 🥂🍾</b>
-        </p>
+    <div class="blur-overlay" id="celebrationOverlay">
+        <div class="celebration-card">
+            <h1 style="font-size: 3rem; margin: 0; font-weight: 900; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                🥃 NOVÝ MANDÁT JE DOMA! 🥃
+            </h1>
+            <p style="font-size: 1.8rem; margin: 20px 0; font-weight: 800; color: #fef08a;">
+                Sdružení pro město Domažlice právě získalo <span style="font-size: 2.2rem; color: #ffffff;">{current_spmd_m}. mandát</span>!
+            </p>
+            <div style="font-size: 1.4rem; background: rgba(0,0,0,0.25); padding: 16px 24px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">
+                <b>POVINNOST ŠTÁBU:</b> Všichni povinně RUNDU PANÁKŮ na oslavu! 🥂🍾
+            </div>
+            <div class="shot-timer-bar"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("Zavřít a pokračovat v oslavě 🥂"):
-        st.session_state["show_shot_modal"] = False
-        st.rerun()
 
-# --- HEADER APP ---
-ts_now = datetime.now().strftime("%H:%M:%S")
-if st.session_state["is_simulation_active"]:
-    status_html = f'<span class="status-sim"><span class="status-dot-yellow"></span> SIMULAČNÍ REŽIM (Predikce 2026)</span>'
-else:
-    status_html = f'<span class="status-online"><span class="status-dot-green"></span> ONLINE ({ts_now})</span>'
-
-st.markdown(f"""
-<div class="cmd-header">
-    <div class="cmd-title">
-        🏛️ SPMD — Řídicí Centrum Volebního Štábu Domažlice
-        {status_html}
-    </div>
-    <div style="color: #38bdf8; font-weight: 700;">DOMAŽLICE (21 MANDÁTŮ)</div>
-</div>
-""", unsafe_allow_html=True)
-
+    # Časovač přímo v Pythonu - aplikace počká 5 sekund a pak bezpečně obnoví stav bez JavaScriptových konfliktů
+    time.sleep(5)
+    st.session_state["show_shot_modal"] = False
+    st.rerun()
+# --- ROBUSTNÍ SOUHRN VOLEB NAHOŘE ---
 if ucast_render:
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Sečtenost okrsků", f"{ucast_render['okrsky_zprac']} / {ucast_render['okrsky_celkem']}", f"{ucast_render['okrsky_proc']:.1f} %")
-    m2.metric("Volební účast", f"{ucast_render['ucast_proc']:.2f} %")
-    m3.metric("Zapsaní voliči", f"{ucast_render['zapsani_volici']:,}".replace(',', ' '))
-    m4.metric("Platné hlasy", f"{ucast_render['platne_hlasy']:,}".replace(',', ' '))
+    ts_now = datetime.now().strftime("%H:%M:%S")
+    status_txt = "SIMULACE 2026" if st.session_state["is_simulation_active"] else f"LIVE ({ts_now})"
+    
+    st.markdown(f"""
+    <div class="robust-summary-box">
+        <div class="summary-title">
+            <span>🏛️ DOMAŽLICE — VOLEBNÍ VÝSLEDKY (21 MANDÁTŮ)</span>
+            <span style="font-size: 0.95rem; background: #0284c7; padding: 2px 10px; border-radius: 6px;">{status_txt}</span>
+        </div>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Sečteno Okrsků</div>
+                <div class="summary-value">{ucast_render['okrsky_zprac']} / {ucast_render['okrsky_celkem']} ({ucast_render['okrsky_proc']:.1f}%)</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Volební Účast</div>
+                <div class="summary-value" style="color: #4ade80;">{ucast_render['ucast_proc']:.2f}%</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Zapsaní Voliči</div>
+                <div class="summary-value" style="color: #f8fafc;">{ucast_render['zapsani_volici']:,}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Platné Hlasy</div>
+                <div class="summary-value" style="color: #f59e0b;">{ucast_render['platne_hlasy']:,}</div>
+            </div>
+        </div>
+    </div>
+    """.replace(',', ' '), unsafe_allow_html=True)
 
 # --- ZÁLOŽKY ---
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 COMMAND CENTER: Výsledky & Zastupitelé", 
-    "🤝 KOALIČNÍ KALKULÁTOR & RED-LINES", 
-    "📜 KOMPLETNÍ KANDIDÁTKY STRAN 2026",
-    "🗺️ DETAIL SČÍTÁNÍ OKRSKŮ"
+    "📊 VÝSLEDKY & ZASTUPITELÉ", 
+    "🤝 KOALIČNÍ KALKULÁTOR", 
+    "📜 KOMPLETNÍ KANDIDÁTKY 2026",
+    "🗺️ DETAIL OKRSKŮ"
 ])
 
 # ==========================================
-# COMMAND CENTER: VÝSLEDKY & ZASTUPITELÉ
+# COMMAND CENTER: DVA SLOUPCE AŽ DOLŮ
 # ==========================================
 with tab1:
     if df_strany_render is not None:
         col_strany, col_zastupitele = st.columns([1.1, 1.9])
 
+        # LEVÝ SLOUPEC: VÝSLEDKY PODLE KANDIDÁTEK
         with col_strany:
-            st.markdown("##### 📈 Výsledky stran & d'Hondtovy mandáty")
-            
+            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>📊 Výsledky kandidátních listin</h4>", unsafe_allow_html=True)
             st.dataframe(
                 df_strany_render[["Kandidátní listina", "Celkem hlasů", "Podíl (%)", "Mandáty", "Srovnání (2022)"]].sort_values(by="Celkem hlasů", ascending=False), 
                 use_container_width=True, 
                 hide_index=True,
-                height=340
+                height=520
             )
 
-            st.markdown("##### 📊 Grafický poměr sil v zastupitelstvu")
-            df_chart = df_strany_render[df_strany_render["Mandáty"] > 0].set_index("Kandidátní listina")[["Mandáty"]]
-            st.bar_chart(df_chart, horizontal=True, color="#026a7f")
-
+        # PRAVÝ SLOUPEC: KARTY ZVOLENÝCH ZASTUPITELŮ
         with col_zastupitele:
-            st.markdown("##### 👥 Zvolení zastupitelé Domažlic (21 mandátů)")
-            
+            st.markdown("<h4 style='margin:0 0 8px 0; font-weight:800;'>👥 Zvolení zastupitelé (21 křesel)</h4>", unsafe_allow_html=True)
             if zvoleni_list:
                 df_zvoleni = pd.DataFrame(zvoleni_list).sort_values(by="Preferenční hlasy", ascending=False)
                 zastupitelie_list = df_zvoleni.to_dict('records')
@@ -651,21 +657,23 @@ with tab1:
                     jmeno = rep["Jméno a příjmení"]
                     strana = rep["Kandidátní listina"]
                     hlasy = rep["Preferenční hlasy"]
+                    
                     party_color = get_party_color(strana)
+                    bg_rgba = hex_to_rgba(party_color, alpha=0.18)
 
                     if jmeno in past_votes_kand:
                         diff = hlasy - past_votes_kand[jmeno]
                         if diff > 0:
-                            trend_badge = f'<span class="trend-pill trend-up">🟢 +{diff:,} h.</span>'
+                            trend_badge = f'<span class="trend-pill trend-up">🟢 +{diff:,}</span>'
                         elif diff < 0:
-                            trend_badge = f'<span class="trend-pill trend-down">🔴 {diff:,} h.</span>'
+                            trend_badge = f'<span class="trend-pill trend-down">🔴 {diff:,}</span>'
                         else:
-                            trend_badge = '<span class="trend-pill trend-same">⚪ 0 h.</span>'
+                            trend_badge = '<span class="trend-pill trend-same">⚪ 0</span>'
                     else:
                         trend_badge = '<span class="trend-pill trend-new">🆕 NEW</span>'
 
                     card_code = f"""
-                    <div class="rep-card-box" style="border-left: 20px solid {party_color};">
+                    <div class="rep-card-box" style="background-color: {bg_rgba}; border-left: 20px solid {party_color};">
                         <div>
                             <div class="rep-name" title="{jmeno}">#{idx+1} {jmeno}</div>
                             <div class="rep-party" title="{strana}">{strana}</div>
@@ -683,7 +691,6 @@ with tab1:
 # KARTA 2: KOALIČNÍ KALKULÁTOR
 # ==========================================
 with tab2:
-    st.subheader("🤝 Koaliční kalkulátor a varianty většiny (≥ 11 křesel)")
     if df_strany_render is not None:
         vsechny_strany = list(df_strany_render["Kandidátní listina"].unique())
         
@@ -697,11 +704,11 @@ with tab2:
             st.warning("Při zvolených podmínkách neexistuje žádná většina 11+ mandátů!")
         else:
             for combo, kresla, status_txt, status_class in koalice:
-                party_badges = [f'<span style="background-color: {get_party_color(s)}; color: white; padding: 4px 10px; border-radius: 6px; margin-right: 6px; font-weight: bold; font-size: 0.85rem; display: inline-block; margin-bottom: 4px;">{s}: {mandates_calc[s]} m.</span>' for s in combo]
+                party_badges = [f'<span style="background-color: {get_party_color(s)}; color: white; padding: 4px 10px; border-radius: 6px; margin-right: 6px; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 4px;">{s}: {mandates_calc[s]} m.</span>' for s in combo]
                 
                 st.markdown(f"""
-                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">Většina {kresla} mandátů</span>
                         <span class="{status_class}">{status_txt}</span>
                     </div>
@@ -713,8 +720,6 @@ with tab2:
 # KARTA 3: KOMPLETNÍ KANDIDÁTKY STRAN
 # ==========================================
 with tab3:
-    st.subheader("📜 Kompletní kandidátní listiny všech 9 stran pro rok 2026")
-    
     if df_kandidatky_2026 is not None:
         p_col = 'Kandidátní listina.název'
         f1, f2 = st.columns(2)
@@ -730,14 +735,14 @@ with tab3:
         st.dataframe(
             df_s[['Kandidátní listina.číslo', p_col, 'Kandidát.poř. číslo', 'Kandidát.příjmení, jméno, tituly', 'Kandidát.věk', 'Navrhující strana', 'Politická příslušnost', 'Povolání', 'Bydliště']], 
             use_container_width=True, 
-            hide_index=True
+            hide_index=True,
+            height=450
         )
 
 # ==========================================
 # KARTA 4: DETAIL OKRSKŮ
 # ==========================================
 with tab4:
-    st.subheader("🗺️ Detailní sčítání po domažlických okrscích")
     if ucast_render:
         st.write(f"Sečteno **{ucast_render['okrsky_zprac']} z {ucast_render['okrsky_celkem']} okrsků** ({ucast_render['okrsky_proc']:.1f} %).")
         st.progress(ucast_render['okrsky_proc'] / 100.0)
