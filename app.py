@@ -18,14 +18,14 @@ REFRESH_INTERVAL = 60
 
 # --- PŘESNÉ BAREVNÉ SCHÉMA STRAN ---
 PARTY_COLORS = {
-    "STRANA PRO DOMAŽLICE": "#f8ea4e",
-    "Pro Domažlice, KDU-ČSL a nezávislí": "#f8ea4e",
-    "VAŠE DOMAŽLICE": "#03abf4",
+    "STRANA PRO DOMAŽLICE": "#d97706", # sytější zlatá/oranžová pro světlý podklad
+    "Pro Domažlice, KDU-ČSL a nezávislí": "#d97706",
+    "VAŠE DOMAŽLICE": "#0284c7",
     "Stačilo! (KSČM a nezávislí)": "#dc2626",
-    "ANO 2011 a nezávislí": "#b1e3da",
-    "ANO 2011 s podporou nezávislých": "#b1e3da",
-    "Česká pirátská strana": "#000000",
-    "Občanská demokratická strana": "#004494",
+    "ANO 2011 a nezávislí": "#0d9488",
+    "ANO 2011 s podporou nezávislých": "#0d9488",
+    "Česká pirátská strana": "#7e22ce",
+    "Občanská demokratická strana": "#2563eb",
     "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": "#026a7f",
     "ŽIJEME DOMAŽLICE - VÝZVA PRO NOVÝ SMĚR MĚSTA": "#16a34a",
     "Svoboda a přímá demokracie (SPD)": "#b91c1c"
@@ -38,18 +38,17 @@ def get_party_color(party_name):
     for k, v in PARTY_COLORS.items():
         if k.lower() in p_clean.lower() or p_clean.lower() in k.lower():
             return v
-    return "#475569"
+    return "#2563eb"
 
-# --- OPRAVA ODSAZENÍ (PADDING-TOP) OD HORNÍ LIŠTY APP ---
+# --- SVĚTLÉ A VYSOCE KONTRASTNÍ STYLOVÁNÍ KARET ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    @import url('nts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
     }
 
-    /* Odsazení od horního okraje Streamlit lišty (Deploy / Menu) */
     .block-container {
         padding-top: 4.5rem !important;
         padding-bottom: 2rem !important;
@@ -115,29 +114,34 @@ st.markdown("""
         box-shadow: 0 0 8px #f8ea4e;
     }
 
+    /* SVĚTLÉ KARTY ZASTUPITELŮ S ČERNÝM / TMAVÝM PÍSMEM */
     .rep-card-box {
-        background: #1e293b;
-        border: 1px solid #334155;
+        background-color: #ffffff !important;
         border-radius: 10px;
-        padding: 10px;
-        margin-bottom: 8px;
-        min-height: 80px;
+        padding: 12px;
+        margin-bottom: 10px;
+        min-height: 85px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
     }
     .rep-name {
-        font-size: 0.88rem;
-        font-weight: 800;
-        color: #f8fafc;
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        color: #0f172a !important; /* Černé / tmavě grafitové písmo */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-bottom: 2px;
     }
     .rep-party {
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: #94a3b8;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        color: #475569 !important; /* Tmavě šedé písmo */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -146,26 +150,26 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 6px;
+        margin-top: 8px;
         font-family: 'JetBrains Mono', monospace;
     }
     .rep-votes {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #38bdf8;
+        font-size: 0.88rem !important;
+        font-weight: 800 !important;
+        color: #0284c7 !important; /* Tmavší modrá pro hlasy */
     }
 
     .trend-pill {
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        padding: 2px 6px;
+        padding: 3px 8px;
         border-radius: 6px;
         font-family: 'JetBrains Mono', monospace;
     }
-    .trend-up { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; }
-    .trend-down { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; }
-    .trend-same { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid #64748b; }
-    .trend-new { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid #38bdf8; }
+    .trend-up { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .trend-down { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .trend-same { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .trend-new { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
 
     .badge-krehka { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
     .badge-bezpecna { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
@@ -314,11 +318,10 @@ def najdi_koalice(mandaty, min_kresel=11, zakazane=[], povinne=[]):
     vysledky.sort(key=lambda x: (x[1], len(x[0])))
     return vysledky
 
-# --- VESTAVĚNÁ KOMPLETNÍ DATA KANDIDÁTEK 2026 (BEZ POTŘEBY SOUTORU CSV) ---
+# --- VESTAVĚNÁ DATA KANDIDÁTEK ---
 @st.cache_data
 def nacti_kandidatky_2026_built_in():
     try:
-        # Zkouška z CSV
         df_csv = pd.read_csv('data-export.csv', sep=';', encoding='utf-8-sig')
         df_csv.columns = [c.strip() for c in df_csv.columns]
         party_col = 'Kandidátní listina.název'
@@ -329,9 +332,7 @@ def nacti_kandidatky_2026_built_in():
         df_csv[num_col] = pd.to_numeric(df_csv[num_col], errors='coerce').fillna(0).astype(int)
         return df_csv
     except Exception:
-        # VESTAVĚNÉ KLÍČOVÉ KANDIDÁTKY ZE SOUBORU
         built_in_kands = [
-            # VAŠE DOMAŽLICE
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 1, "Kandidát.příjmení, jméno, tituly": "Krutina Viktor Ing.", "Kandidát.věk": 48, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "1. místostarosta města Domažlice", "Bydliště": "Dolejší Předměstí"},
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 2, "Kandidát.příjmení, jméno, tituly": "Štangl Jiří", "Kandidát.věk": 48, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "hlavní mistr", "Bydliště": "Dolejší Předměstí"},
             {"Kandidátní listina.číslo": 1, "Kandidátní listina.název": "VAŠE DOMAŽLICE", "Kandidát.poř. číslo": 3, "Kandidát.příjmení, jméno, tituly": "Špoták Rudolf", "Kandidát.věk": 43, "Navrhující strana": "NK", "Politická příslušnost": "BEZPP", "Povolání": "emeritní hejtman Plzeňského kraje", "Bydliště": "Bezděkovské Předměstí"},
@@ -430,18 +431,18 @@ PAST_PARTY_MAP = {
     "STRANA PRO DOMAŽLICE": "Vždy Domažlice - KDU-ČSL a nezávislí"
 }
 
-# SESTAVENÍ SIMULAČNÍHO MODELU PODLE ODKAZOVANÉ TABULKY PREDIKCÍ
+# SESTAVENÍ SIMULAČNÍHO MODELU PODLE PREDIKCÍ
 if st.session_state["is_simulation_active"]:
     sim_votes = {
-        "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": 14700,             # 21.1% -> 5 mandátů
-        "ANO 2011 a nezávislí": 14700,                    # 21.1% -> 5 mandátů
-        "Pro Domažlice, KDU-ČSL a nezávislí": 9500,        # 13.7% -> 3 mandáty
-        "Občanská demokratická strana": 7200,              # 10.4% -> 2 mandáty
-        "VAŠE DOMAŽLICE": 6300,                            # 9.1%  -> 2 mandáty
-        "ŽIJEME DOMAŽLICE - VÝZVA PRO NOVÝ SMĚR MĚSTA": 5600,# 8.1%  -> 2 mandáty
-        "Svoboda a přímá demokracie (SPD)": 4900,          # 7.1%  -> 1 mandát
-        "Česká pirátská strana": 3800,                     # 5.5%  -> 1 mandát
-        "Stačilo! (KSČM a nezávislí)": 2800                # 4.0%  -> 0 mandátů
+        "SDRUŽENÍ PRO MĚSTO DOMAŽLICE": 14700,
+        "ANO 2011 a nezávislí": 14700,
+        "Pro Domažlice, KDU-ČSL a nezávislí": 9500,
+        "Občanská demokratická strana": 7200,
+        "VAŠE DOMAŽLICE": 6300,
+        "ŽIJEME DOMAŽLICE - VÝZVA PRO NOVÝ SMĚR MĚSTA": 5600,
+        "Svoboda a přímá demokracie (SPD)": 4900,
+        "Česká pirátská strana": 3800,
+        "Stačilo! (KSČM a nezávislí)": 2800
     }
     
     mandates_calc, pct_calc = vypocitej_mandaty(sim_votes)
@@ -465,7 +466,6 @@ if st.session_state["is_simulation_active"]:
 
     df_strany_render["Srovnání (2022)"] = df_strany_render.apply(srovnej_mandaty_sim, axis=1)
 
-    # GENERUJEME ZVOLENÉ ZASTUPITELE Z VESTAVĚNÉHO SEZNAMU
     zvoleni_list = []
     vsechni_list = []
     
@@ -477,7 +477,6 @@ if st.session_state["is_simulation_active"]:
         for party, m_count in mandates_calc.items():
             if m_count <= 0: continue
             
-            # Bezpečné hledání bez regexu
             party_kands = df_kandidatky_2026[
                 df_kandidatky_2026[p_col].str.contains(party[:10], case=False, na=False, regex=False)
             ].sort_values(by=num_col)
@@ -652,7 +651,7 @@ with tab1:
                     jmeno = rep["Jméno a příjmení"]
                     strana = rep["Kandidátní listina"]
                     hlasy = rep["Preferenční hlasy"]
-                    border_color = get_party_color(strana)
+                    party_color = get_party_color(strana)
 
                     if jmeno in past_votes_kand:
                         diff = hlasy - past_votes_kand[jmeno]
@@ -666,7 +665,7 @@ with tab1:
                         trend_badge = '<span class="trend-pill trend-new">🆕 NEW</span>'
 
                     card_code = f"""
-                    <div class="rep-card-box" style="border-left: 5px solid {border_color};">
+                    <div class="rep-card-box" style="border-left: 6px solid {party_color};">
                         <div>
                             <div class="rep-name" title="{jmeno}">#{idx+1} {jmeno}</div>
                             <div class="rep-party" title="{strana}">{strana}</div>
